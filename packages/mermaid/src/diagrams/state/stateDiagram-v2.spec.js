@@ -1,11 +1,12 @@
-import { parser } from './parser/stateDiagram';
-import stateDb from './stateDb';
-import stateDiagram from './parser/stateDiagram.jison';
+import stateDiagram, { parser } from './parser/stateDiagram.jison';
+import { StateDB } from './stateDb.js';
 
 describe('state diagram V2, ', function () {
   // TODO - these examples should be put into ./parser/stateDiagram.spec.js
   describe('when parsing an info graph it', function () {
+    let stateDb;
     beforeEach(function () {
+      stateDb = new StateDB(2);
       parser.yy = stateDb;
       stateDiagram.parser.yy = stateDb;
       stateDiagram.parser.yy.clear();
@@ -54,16 +55,6 @@ describe('state diagram V2, ', function () {
       parser.parse(str);
       const title = stateDb.getAccTitle();
       expect(title).toBe('a simple title of the diagram');
-    });
-    it('simple with directive', function () {
-      const str = `%%{init: {'logLevel': 0 }}%%
-      stateDiagram-v2\n
-      State1 : this is another string
-      [*] --> State1
-      State1 --> [*]
-      `;
-
-      parser.parse(str);
     });
     it('should handle relation definitions', function () {
       const str = `stateDiagram-v2\n
@@ -137,7 +128,6 @@ describe('state diagram V2, ', function () {
         `;
 
         stateDiagram.parser.parse(diagram);
-        stateDiagram.parser.yy.extract(stateDiagram.parser.yy.getRootDocV2());
 
         const rels = stateDb.getRelations();
         const rel_1_2 = rels.find((rel) => rel.id1 === 'State1' && rel.id2 === 'State2');
@@ -412,10 +402,9 @@ describe('state diagram V2, ', function () {
         `;
 
       stateDiagram.parser.parse(diagram);
-      stateDiagram.parser.yy.extract(stateDiagram.parser.yy.getRootDocV2());
 
       const states = stateDb.getStates();
-      expect(states['Active'].doc[0].id).toEqual('Idle');
+      expect(states.get('Active').doc[0].id).toEqual('Idle');
 
       const rels = stateDb.getRelations();
       const rel_Inactive_Idle = rels.find((rel) => rel.id1 === 'Inactive' && rel.id2 === 'Idle');
